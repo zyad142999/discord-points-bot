@@ -329,8 +329,14 @@ async function getModLogChannel(guild) {
 
 async function sendModLog(guild, embed) {
   const channel = await getModLogChannel(guild);
-  if (!channel) return;
-  await channel.send({ embeds: [embed] }).catch(() => {});
+  if (!channel) {
+    console.log('[ModLog] Channel not found:', config.modLogChannelName);
+    return;
+  }
+  console.log('[ModLog] Sending to channel:', channel.name, 'ID:', channel.id);
+  await channel.send({ embeds: [embed] }).catch((error) => {
+    console.error('[ModLog] Failed to send log:', error.message);
+  });
 }
 
 // ─── ٤. لوقات الرتب ──────────────────────────────────────────────
@@ -341,8 +347,14 @@ async function getRolesLogChannel(guild) {
 
 async function sendRolesLog(guild, embed) {
   const channel = await getRolesLogChannel(guild);
-  if (!channel) return;
-  await channel.send({ embeds: [embed] }).catch(() => {});
+  if (!channel) {
+    console.log('[RoleLog] Channel not found:', config.rolesLogChannelName);
+    return;
+  }
+  console.log('[RoleLog] Sending to channel:', channel.name, 'ID:', channel.id);
+  await channel.send({ embeds: [embed] }).catch((error) => {
+    console.error('[RoleLog] Failed to send log:', error.message);
+  });
 }
 
 // ─── ٥. لوقات العقوبات ───────────────────────────────────────────
@@ -353,8 +365,14 @@ async function getPunishmentLogChannel(guild) {
 
 async function sendPunishmentLog(guild, embed) {
   const channel = await getPunishmentLogChannel(guild);
-  if (!channel) return;
-  await channel.send({ embeds: [embed] }).catch(() => {});
+  if (!channel) {
+    console.log('[PunishmentLog] Channel not found:', config.punishmentLogChannelName);
+    return;
+  }
+  console.log('[PunishmentLog] Sending to channel:', channel.name, 'ID:', channel.id);
+  await channel.send({ embeds: [embed] }).catch((error) => {
+    console.error('[PunishmentLog] Failed to send log:', error.message);
+  });
 }
 
 /**
@@ -364,24 +382,45 @@ async function sendPunishmentLog(guild, embed) {
 async function handleRoleLog(entry, guild) {
   const { action, executor, target, changes, reason } = entry;
 
+  console.log('[RoleLog] Audit log entry received:', { action, executor: executor?.tag, target: target?.id });
+
   // تجاهل أفعال البوت نفسه
-  if (executor?.bot) return;
+  if (executor?.bot) {
+    console.log('[RoleLog] Ignoring bot action');
+    return;
+  }
 
   // فقط للوقات الرتب
-  if (action !== AuditLogEvent.MemberRoleUpdate) return;
+  if (action !== AuditLogEvent.MemberRoleUpdate) {
+    console.log('[RoleLog] Not a role update, action:', action);
+    return;
+  }
 
-  if (!changes || changes.length === 0) return;
+  if (!changes || changes.length === 0) {
+    console.log('[RoleLog] No changes detected');
+    return;
+  }
+
+  console.log('[RoleLog] Role update detected, changes:', changes.map(c => c.key));
 
   // التحقق من التغييرات في الرتب
   const roleChanges = changes.filter(change => change.key === '$add' || change.key === '$remove');
-  if (roleChanges.length === 0) return;
+  if (roleChanges.length === 0) {
+    console.log('[RoleLog] No role changes found');
+    return;
+  }
+
+  console.log('[RoleLog] Processing role changes:', roleChanges.length);
 
   for (const change of roleChanges) {
     const addedRoles = change.key === '$add' ? change.new : [];
     const removedRoles = change.key === '$remove' ? change.new : [];
 
+    console.log('[RoleLog] Added roles:', addedRoles.length, 'Removed roles:', removedRoles.length);
+
     if (addedRoles.length > 0) {
       for (const role of addedRoles) {
+        console.log('[RoleLog] Sending role add log for role:', role.name);
         const embed = new EmbedBuilder()
           .setColor(0x57f287)
           .setTitle('➕ إضافة رتبة')
@@ -398,6 +437,7 @@ async function handleRoleLog(entry, guild) {
 
     if (removedRoles.length > 0) {
       for (const role of removedRoles) {
+        console.log('[RoleLog] Sending role remove log for role:', role.name);
         const embed = new EmbedBuilder()
           .setColor(0xed4245)
           .setTitle('➖ إزالة رتبة')
@@ -421,8 +461,13 @@ async function handleRoleLog(entry, guild) {
 async function handleAuditLog(entry, guild) {
   const { action, executor, target, changes, reason, extra } = entry;
 
+  console.log('[ModLog] Audit log entry received:', { action, executor: executor?.tag, target: target?.id });
+
   // تجاهل أفعال البوت نفسه
-  if (executor?.bot) return;
+  if (executor?.bot) {
+    console.log('[ModLog] Ignoring bot action');
+    return;
+  }
 
   let embed = null;
 
