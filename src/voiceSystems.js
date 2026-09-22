@@ -12,9 +12,26 @@ const attendanceStore = require('./attendanceStore');
 
 // ─── مساعد: جيب قناة باسمها ──────────────────────────────────
 function findChannelByName(guild, name) {
-  return guild.channels.cache.find(
+  console.log('[ChannelSearch] Looking for channel:', name);
+  console.log('[ChannelSearch] Total channels in guild:', guild.channels.cache.size);
+
+  // محاولة إيجاد القناة بالاسم بالضبط
+  const channel = guild.channels.cache.find(
     (c) => c.name === name && c.isTextBased && c.isTextBased()
-  ) || null;
+  );
+
+  if (!channel) {
+    console.log('[ChannelSearch] Exact match not found, trying case-insensitive');
+    // محاولة البحث بدون الحساسية للأحرف
+    const caseInsensitiveChannel = guild.channels.cache.find(
+      (c) => c.name.toLowerCase() === name.toLowerCase() && c.isTextBased && c.isTextBased()
+    );
+    console.log('[ChannelSearch] Case-insensitive match:', caseInsensitiveChannel ? caseInsensitiveChannel.name : 'null');
+    return caseInsensitiveChannel || null;
+  }
+
+  console.log('[ChannelSearch] Found channel:', channel.name, 'ID:', channel.id);
+  return channel;
 }
 
 function findVoiceChannelByName(guild, name) {
@@ -324,7 +341,12 @@ function startVoiceLeaderboard(client) {
 // ─── ٣. لوقات المودريشن ──────────────────────────────────────
 
 async function getModLogChannel(guild) {
-  return findChannelByName(guild, config.modLogChannelName);
+  const channel = findChannelByName(guild, config.modLogChannelName);
+  if (!channel) {
+    console.log('[ModLog] Looking for channel:', config.modLogChannelName);
+    console.log('[ModLog] Available channels:', guild.channels.cache.map(c => c.name).join(', '));
+  }
+  return channel;
 }
 
 async function sendModLog(guild, embed) {

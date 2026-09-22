@@ -26,7 +26,6 @@ const client = new Client({
     GatewayIntentBits.GuildVoiceStates,
     GatewayIntentBits.MessageContent,
     GatewayIntentBits.GuildModeration,
-    GatewayIntentBits.GuildAuditLogEntries,
   ],
   partials: [Partials.Channel],
 });
@@ -64,6 +63,34 @@ client.once(Events.ClientReady, async (readyClient) => {
     console.log('✅ تم تسجيل الأوامر تلقائياً.');
   } catch (e) {
     console.error('❌ فشل تسجيل الأوامر:', e.message);
+  }
+
+  // التحقق من الصلاحيات في السيرفر
+  try {
+    const guild = await readyClient.guilds.fetch(config.guildId);
+    console.log('[Permissions] Guild:', guild.name);
+
+    // التحقق من الصلاحيات المطلوبة
+    const botMember = await guild.members.fetch(readyClient.user.id);
+    const permissions = botMember.permissions;
+    console.log('[Permissions] Bot permissions:', permissions.bitfield.toString());
+
+    // التحقق من إمكانية الوصول للوقات
+    try {
+      const auditLogs = await guild.fetchAuditLogs({ limit: 1 });
+      console.log('[Permissions] ✅ Can access audit logs');
+    } catch (e) {
+      console.error('[Permissions] ❌ Cannot access audit logs:', e.message);
+    }
+
+    // إدراج القنوات الموجودة
+    console.log('[Channels] Available channels:');
+    guild.channels.cache.forEach(channel => {
+      console.log(`[Channels] - ${channel.name} (${channel.type}) ID: ${channel.id}`);
+    });
+
+  } catch (e) {
+    console.error('[Permissions] Error checking permissions:', e.message);
   }
 
   // تحميل البيانات المحفوظة
@@ -225,12 +252,21 @@ client.on(Events.VoiceStateUpdate, (oldState, newState) => {
 // ─── لوقات المودريشن والرتب ───────────────────────────────────
 client.on(Events.GuildAuditLogEntryCreate, async (entry, guild) => {
   try {
+    console.log('[AuditLog] Entry received:', {
+      action: entry.action,
+      actionType: entry.actionType,
+      executor: entry.executor?.tag,
+      target: entry.target?.id,
+      guild: guild.name
+    });
+
     // معالجة لوقات المودريشن
     await handleAuditLog(entry, guild);
     // معالجة لوقات الرتب
     await handleRoleLog(entry, guild);
   } catch (e) {
     console.error('[AuditLog] خطأ:', e.message);
+    console.error('[AuditLog] Stack:', e.stack);
   }
 });
 
