@@ -1,5 +1,12 @@
 [phases.build]
-cmds = ["npm ci --production"]
+cmds = ["npm ci --production --prefer-offline", "npm cache clean --force"]
 
 [start]
 cmd = "node index.js"
+
+[phases.build.nixpkgsArchive]
+"https://github.com/NixOS/nixpkgs/archive/nixos-23.11.tar.gz"
+
+[variables]
+NODE_ENV = "production"
+NPM_CONFIG_CACHE = "/tmp/npm-cache"
