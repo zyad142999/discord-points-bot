@@ -402,33 +402,34 @@ async function sendPunishmentLog(guild, embed) {
  * يراقب: ROLE_UPDATE (إضافة/إزالة رتب)
  */
 async function handleRoleLog(entry, guild) {
-  const { action, executor, target, changes, reason } = entry;
+  try {
+    const { action, executor, target, changes, reason } = entry;
 
-  console.log('[RoleLog] Audit log entry received:', { action, executor: executor?.tag, target: target?.id });
+    console.log('[RoleLog] Audit log entry received:', { action, executor: executor?.tag, target: target?.id });
 
-  // تجاهل أفعال البوت نفسه
-  if (executor?.bot) {
-    console.log('[RoleLog] Ignoring bot action');
-    return;
-  }
+    // تجاهل أفعال البوت نفسه
+    if (executor?.bot) {
+      console.log('[RoleLog] Ignoring bot action');
+      return;
+    }
 
-  // التحقق من وجود target
-  if (!target || !target.id) {
-    console.log('[RoleLog] Target is null or missing id, skipping');
-    return;
-  }
+    // التحقق من وجود target
+    if (!target || !target.id) {
+      console.log('[RoleLog] Target is null or missing id, skipping');
+      return;
+    }
 
-  // التحقق من وجود executor
-  if (!executor || !executor.id) {
-    console.log('[RoleLog] Executor is null or missing id, skipping');
-    return;
-  }
+    // التحقق من وجود executor
+    if (!executor || !executor.id) {
+      console.log('[RoleLog] Executor is null or missing id, skipping');
+      return;
+    }
 
-  // فقط للوقات الرتب
-  if (action !== AuditLogEvent.MemberRoleUpdate) {
-    console.log('[RoleLog] Not a role update, action:', action);
-    return;
-  }
+    // فقط للوقات الرتب
+    if (action !== AuditLogEvent.MemberRoleUpdate) {
+      console.log('[RoleLog] Not a role update, action:', action);
+      return;
+    }
 
   if (!changes || changes.length === 0) {
     console.log('[RoleLog] No changes detected');
@@ -486,6 +487,10 @@ async function handleRoleLog(entry, guild) {
       }
     }
   }
+  } catch (error) {
+    console.error('[RoleLog] Error in handleRoleLog:', error.message);
+    console.error('[RoleLog] Error stack:', error.stack);
+  }
 }
 
 /**
@@ -493,29 +498,30 @@ async function handleRoleLog(entry, guild) {
  * يراقب: BAN / UNBAN / TIMEOUT / MEMBER_UPDATE (mute/deafen) / MEMBER_DISCONNECT / MEMBER_MOVE
  */
 async function handleAuditLog(entry, guild) {
-  const { action, executor, target, changes, reason, extra } = entry;
+  try {
+    const { action, executor, target, changes, reason, extra } = entry;
 
-  console.log('[ModLog] Audit log entry received:', { action, executor: executor?.tag, target: target?.id });
+    console.log('[ModLog] Audit log entry received:', { action, executor: executor?.tag, target: target?.id });
 
-  // تجاهل أفعال البوت نفسه
-  if (executor?.bot) {
-    console.log('[ModLog] Ignoring bot action');
-    return;
-  }
+    // تجاهل أفعال البوت نفسه
+    if (executor?.bot) {
+      console.log('[ModLog] Ignoring bot action');
+      return;
+    }
 
-  // التحقق من وجود target
-  if (!target || !target.id) {
-    console.log('[ModLog] Target is null or missing id, skipping');
-    return;
-  }
+    // التحقق من وجود target
+    if (!target || !target.id) {
+      console.log('[ModLog] Target is null or missing id, skipping');
+      return;
+    }
 
-  // التحقق من وجود executor
-  if (!executor || !executor.id) {
-    console.log('[ModLog] Executor is null or missing id, skipping');
-    return;
-  }
+    // التحقق من وجود executor
+    if (!executor || !executor.id) {
+      console.log('[ModLog] Executor is null or missing id, skipping');
+      return;
+    }
 
-  let embed = null;
+    let embed = null;
 
   // ─── BAN ───
   if (action === AuditLogEvent.MemberBanAdd) {
@@ -672,6 +678,10 @@ async function handleAuditLog(entry, guild) {
 
   if (embed) {
     await sendModLog(guild, embed);
+  }
+  } catch (error) {
+    console.error('[ModLog] Error in handleAuditLog:', error.message);
+    console.error('[ModLog] Error stack:', error.stack);
   }
 }
 
