@@ -31,6 +31,12 @@ const config = {
 
   // قناة لوقات المودريشن
   modLogChannelName: process.env.MOD_LOG_CHANNEL_NAME || 'log-zyad',
+
+  // قناة لوقات الرتب (إضافة/إزالة)
+  rolesLogChannelName: process.env.ROLES_LOG_CHANNEL_NAME || 'لوق-اضافه-او-ازاله-رتب',
+
+  // قناة لوقات العقوبات (تايم-اوت/باند/كيك)
+  punishmentLogChannelName: process.env.PUNISHMENT_LOG_CHANNEL_NAME || 'لوق-التايم-اوت-باند-كيك',
 };
 
 module.exports = config;

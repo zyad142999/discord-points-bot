@@ -8,7 +8,6 @@ const {
 } = require('discord.js');
 const config = require('./src/config');
 const { handleInteraction } = require('./src/interactions');
-const { handleMusicMessage } = require('./src/musicCommands');
 const attendanceStore = require('./src/attendanceStore');
 const {
   handleVoiceStateForSystems,
@@ -16,6 +15,7 @@ const {
   startAfkChecker,
   startVoiceLeaderboard,
   handleAuditLog,
+  handleRoleLog,
 } = require('./src/voiceSystems');
 
 const client = new Client({
@@ -26,6 +26,7 @@ const client = new Client({
     GatewayIntentBits.GuildVoiceStates,
     GatewayIntentBits.MessageContent,
     GatewayIntentBits.GuildModeration,
+    GatewayIntentBits.GuildAuditLogEntries,
   ],
   partials: [Partials.Channel],
 });
@@ -221,12 +222,15 @@ client.on(Events.VoiceStateUpdate, (oldState, newState) => {
   }
 });
 
-// ─── لوقات المودريشن ──────────────────────────────────────────
+// ─── لوقات المودريشن والرتب ───────────────────────────────────
 client.on(Events.GuildAuditLogEntryCreate, async (entry, guild) => {
   try {
+    // معالجة لوقات المودريشن
     await handleAuditLog(entry, guild);
+    // معالجة لوقات الرتب
+    await handleRoleLog(entry, guild);
   } catch (e) {
-    console.error('[ModLog] خطأ:', e.message);
+    console.error('[AuditLog] خطأ:', e.message);
   }
 });
 

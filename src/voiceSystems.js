@@ -333,6 +333,87 @@ async function sendModLog(guild, embed) {
   await channel.send({ embeds: [embed] }).catch(() => {});
 }
 
+// ─── ٤. لوقات الرتب ──────────────────────────────────────────────
+
+async function getRolesLogChannel(guild) {
+  return findChannelByName(guild, config.rolesLogChannelName);
+}
+
+async function sendRolesLog(guild, embed) {
+  const channel = await getRolesLogChannel(guild);
+  if (!channel) return;
+  await channel.send({ embeds: [embed] }).catch(() => {});
+}
+
+// ─── ٥. لوقات العقوبات ───────────────────────────────────────────
+
+async function getPunishmentLogChannel(guild) {
+  return findChannelByName(guild, config.punishmentLogChannelName);
+}
+
+async function sendPunishmentLog(guild, embed) {
+  const channel = await getPunishmentLogChannel(guild);
+  if (!channel) return;
+  await channel.send({ embeds: [embed] }).catch(() => {});
+}
+
+/**
+ * يُستدعى عند GuildAuditLogEntryCreate للوقات الرتب
+ * يراقب: ROLE_UPDATE (إضافة/إزالة رتب)
+ */
+async function handleRoleLog(entry, guild) {
+  const { action, executor, target, changes, reason } = entry;
+
+  // تجاهل أفعال البوت نفسه
+  if (executor?.bot) return;
+
+  // فقط للوقات الرتب
+  if (action !== AuditLogEvent.MemberRoleUpdate) return;
+
+  if (!changes || changes.length === 0) return;
+
+  // التحقق من التغييرات في الرتب
+  const roleChanges = changes.filter(change => change.key === '$add' || change.key === '$remove');
+  if (roleChanges.length === 0) return;
+
+  for (const change of roleChanges) {
+    const addedRoles = change.key === '$add' ? change.new : [];
+    const removedRoles = change.key === '$remove' ? change.new : [];
+
+    if (addedRoles.length > 0) {
+      for (const role of addedRoles) {
+        const embed = new EmbedBuilder()
+          .setColor(0x57f287)
+          .setTitle('➕ إضافة رتبة')
+          .addFields(
+            { name: '👤 العضو', value: `<@${target.id}>`, inline: true },
+            { name: '🏷️ الرتبة', value: `<@&${role.id}> (${role.name})`, inline: true },
+            { name: '🛡️ الفاعل', value: `<@${executor.id}>`, inline: true },
+            { name: '📋 السبب', value: reason || 'بدون سبب', inline: false }
+          )
+          .setTimestamp();
+        await sendRolesLog(guild, embed);
+      }
+    }
+
+    if (removedRoles.length > 0) {
+      for (const role of removedRoles) {
+        const embed = new EmbedBuilder()
+          .setColor(0xed4245)
+          .setTitle('➖ إزالة رتبة')
+          .addFields(
+            { name: '👤 العضو', value: `<@${target.id}>`, inline: true },
+            { name: '🏷️ الرتبة', value: `<@&${role.id}> (${role.name})`, inline: true },
+            { name: '🛡️ الفاعل', value: `<@${executor.id}>`, inline: true },
+            { name: '📋 السبب', value: reason || 'بدون سبب', inline: false }
+          )
+          .setTimestamp();
+        await sendRolesLog(guild, embed);
+      }
+    }
+  }
+}
+
 /**
  * يُستدعى عند GuildAuditLogEntryCreate
  * يراقب: BAN / UNBAN / TIMEOUT / MEMBER_UPDATE (mute/deafen) / MEMBER_DISCONNECT / MEMBER_MOVE
@@ -356,6 +437,9 @@ async function handleAuditLog(entry, guild) {
         { name: '📋 السبب', value: reason || 'بدون سبب', inline: false }
       )
       .setTimestamp();
+
+    // إرسال لوق العقوبات أيضاً
+    await sendPunishmentLog(guild, embed);
   }
 
   // ─── UNBAN ───
@@ -369,6 +453,9 @@ async function handleAuditLog(entry, guild) {
         { name: '📋 السبب', value: reason || 'بدون سبب', inline: false }
       )
       .setTimestamp();
+
+    // إرسال لوق العقوبات أيضاً
+    await sendPunishmentLog(guild, embed);
   }
 
   // ─── TIMEOUT ───
@@ -396,6 +483,7 @@ async function handleAuditLog(entry, guild) {
             )
             .setTimestamp();
           await sendModLog(guild, embed);
+          await sendPunishmentLog(guild, embed);
           return;
         } else if (wasTimedOut && !isTimedOut) {
           // رفع تايم اوت
@@ -408,6 +496,7 @@ async function handleAuditLog(entry, guild) {
             )
             .setTimestamp();
           await sendModLog(guild, embed);
+          await sendPunishmentLog(guild, embed);
           return;
         }
       }
@@ -458,6 +547,9 @@ async function handleAuditLog(entry, guild) {
         { name: '📋 السبب', value: reason || 'بدون سبب', inline: false }
       )
       .setTimestamp();
+
+    // إرسال لوق العقوبات أيضاً
+    await sendPunishmentLog(guild, embed);
   }
 
   // ─── MEMBER MOVE (نقل من روم لروم) ───
@@ -522,4 +614,5 @@ module.exports = {
   startAfkChecker,
   startVoiceLeaderboard,
   handleAuditLog,
+  handleRoleLog,
 };
