@@ -390,6 +390,12 @@ async function handleRoleLog(entry, guild) {
     return;
   }
 
+  // التحقق من وجود target
+  if (!target) {
+    console.log('[RoleLog] Target is null, skipping');
+    return;
+  }
+
   // فقط للوقات الرتب
   if (action !== AuditLogEvent.MemberRoleUpdate) {
     console.log('[RoleLog] Not a role update, action:', action);
@@ -466,6 +472,12 @@ async function handleAuditLog(entry, guild) {
   // تجاهل أفعال البوت نفسه
   if (executor?.bot) {
     console.log('[ModLog] Ignoring bot action');
+    return;
+  }
+
+  // التحقق من وجود target
+  if (!target) {
+    console.log('[ModLog] Target is null, skipping');
     return;
   }
 
