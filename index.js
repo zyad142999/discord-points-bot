@@ -217,12 +217,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 });
 
 client.on(Events.MessageCreate, async (message) => {
-  try {
-    await handleMusicMessage(message);
-  } catch (error) {
-    console.error('خطأ في أمر الموسيقى:', error);
-    await message.reply('صار خطأ أثناء تنفيذ أمر الموسيقى.').catch(() => {});
-  }
+  // نظام الموسيقى تم إزالته
 });
 
 client.on(Events.VoiceStateUpdate, (oldState, newState) => {
