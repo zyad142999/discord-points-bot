@@ -413,8 +413,14 @@ async function handleRoleLog(entry, guild) {
   }
 
   // التحقق من وجود target
-  if (!target) {
-    console.log('[RoleLog] Target is null, skipping');
+  if (!target || !target.id) {
+    console.log('[RoleLog] Target is null or missing id, skipping');
+    return;
+  }
+
+  // التحقق من وجود executor
+  if (!executor || !executor.id) {
+    console.log('[RoleLog] Executor is null or missing id, skipping');
     return;
   }
 
@@ -498,8 +504,14 @@ async function handleAuditLog(entry, guild) {
   }
 
   // التحقق من وجود target
-  if (!target) {
-    console.log('[ModLog] Target is null, skipping');
+  if (!target || !target.id) {
+    console.log('[ModLog] Target is null or missing id, skipping');
+    return;
+  }
+
+  // التحقق من وجود executor
+  if (!executor || !executor.id) {
+    console.log('[ModLog] Executor is null or missing id, skipping');
     return;
   }
 

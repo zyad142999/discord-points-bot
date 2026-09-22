@@ -1,6 +1,6 @@
 {
   "name": "discord-attendance-bot",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "بوت تسجيل حضور أعضاء العصابة وحساب الساعات",
   "main": "index.js",
   "scripts": {
