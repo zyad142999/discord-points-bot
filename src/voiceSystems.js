@@ -10,28 +10,22 @@ const { EmbedBuilder, AuditLogEvent } = require('discord.js');
 const config = require('./config');
 const attendanceStore = require('./attendanceStore');
 
+// ─── مساعد: جيب قناة بالـ ID ──────────────────────────────────
+function findChannelById(guild, channelId) {
+  console.log('[ChannelSearch] Looking for channel by ID:', channelId);
+  const channel = guild.channels.cache.get(channelId);
+  console.log('[ChannelSearch] Found channel:', channel ? channel.name : 'null', 'ID:', channel ? channel.id : 'null');
+  return channel || null;
+}
+
 // ─── مساعد: جيب قناة باسمها ──────────────────────────────────
 function findChannelByName(guild, name) {
-  console.log('[ChannelSearch] Looking for channel:', name);
-  console.log('[ChannelSearch] Total channels in guild:', guild.channels.cache.size);
-
-  // محاولة إيجاد القناة بالاسم بالضبط
+  console.log('[ChannelSearch] Looking for channel by name:', name);
   const channel = guild.channels.cache.find(
     (c) => c.name === name && c.isTextBased && c.isTextBased()
   );
-
-  if (!channel) {
-    console.log('[ChannelSearch] Exact match not found, trying case-insensitive');
-    // محاولة البحث بدون الحساسية للأحرف
-    const caseInsensitiveChannel = guild.channels.cache.find(
-      (c) => c.name.toLowerCase() === name.toLowerCase() && c.isTextBased && c.isTextBased()
-    );
-    console.log('[ChannelSearch] Case-insensitive match:', caseInsensitiveChannel ? caseInsensitiveChannel.name : 'null');
-    return caseInsensitiveChannel || null;
-  }
-
-  console.log('[ChannelSearch] Found channel:', channel.name, 'ID:', channel.id);
-  return channel;
+  console.log('[ChannelSearch] Found channel:', channel ? channel.name : 'null', 'ID:', channel ? channel.id : 'null');
+  return channel || null;
 }
 
 function findVoiceChannelByName(guild, name) {
@@ -341,12 +335,7 @@ function startVoiceLeaderboard(client) {
 // ─── ٣. لوقات المودريشن ──────────────────────────────────────
 
 async function getModLogChannel(guild) {
-  const channel = findChannelByName(guild, config.modLogChannelName);
-  if (!channel) {
-    console.log('[ModLog] Looking for channel:', config.modLogChannelName);
-    console.log('[ModLog] Available channels:', guild.channels.cache.map(c => c.name).join(', '));
-  }
-  return channel;
+  return findChannelByName(guild, config.modLogChannelName);
 }
 
 async function sendModLog(guild, embed) {
@@ -364,13 +353,13 @@ async function sendModLog(guild, embed) {
 // ─── ٤. لوقات الرتب ──────────────────────────────────────────────
 
 async function getRolesLogChannel(guild) {
-  return findChannelByName(guild, config.rolesLogChannelName);
+  return findChannelById(guild, config.rolesLogChannelId);
 }
 
 async function sendRolesLog(guild, embed) {
   const channel = await getRolesLogChannel(guild);
   if (!channel) {
-    console.log('[RoleLog] Channel not found:', config.rolesLogChannelName);
+    console.log('[RoleLog] Channel not found by ID:', config.rolesLogChannelId);
     return;
   }
   console.log('[RoleLog] Sending to channel:', channel.name, 'ID:', channel.id);
@@ -382,13 +371,13 @@ async function sendRolesLog(guild, embed) {
 // ─── ٥. لوقات العقوبات ───────────────────────────────────────────
 
 async function getPunishmentLogChannel(guild) {
-  return findChannelByName(guild, config.punishmentLogChannelName);
+  return findChannelById(guild, config.punishmentLogChannelId);
 }
 
 async function sendPunishmentLog(guild, embed) {
   const channel = await getPunishmentLogChannel(guild);
   if (!channel) {
-    console.log('[PunishmentLog] Channel not found:', config.punishmentLogChannelName);
+    console.log('[PunishmentLog] Channel not found by ID:', config.punishmentLogChannelId);
     return;
   }
   console.log('[PunishmentLog] Sending to channel:', channel.name, 'ID:', channel.id);
