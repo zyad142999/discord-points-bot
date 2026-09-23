@@ -5,7 +5,7 @@ cmds = ["npm ci --production --prefer-offline", "npm cache clean --force"]
 cmd = "node index.js"
 
 [phases.build.nixpkgsArchive]
-"https://github.com/NixOS/nixpkgs/archive/nixos-23.11.tar.gz"
+value = "https://github.com/NixOS/nixpkgs/archive/nixos-23.11.tar.gz"
 
 [variables]
 NODE_ENV = "production"
