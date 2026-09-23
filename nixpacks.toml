@@ -1,6 +1,7 @@
 [phases.build]
 cmds = ["npm ci --production --prefer-offline", "npm cache clean --force"]
 nixpkgsArchive = "https://github.com/NixOS/nixpkgs/archive/nixos-23.11.tar.gz"
+node = "22"
 
 [start]
 cmd = "node index.js"
