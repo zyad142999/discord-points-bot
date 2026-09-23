@@ -9,7 +9,3 @@ NODE_VERSION = "22"
 
 [start]
 cmd = "node index.js"
-
-[variables]
-NODE_ENV = "production"
-NPM_CONFIG_CACHE = "/tmp/npm-cache"
