@@ -82,7 +82,7 @@ const commands = [
           option.setName('عضو').setDescription('العضو').setRequired(true)
         )
         .addIntegerOption((option) =>
-          option.setName('دقائق').setDescription('عدد الدقائق').setRequired(true).setMinValue(1)
+          option.setName('دقائق').setDescription('عدد الدقائق').setRequired(true).setMinValue(1).setMaxValue(10000)
         )
     )
     .addSubcommand((sub) =>
@@ -93,7 +93,7 @@ const commands = [
           option.setName('عضو').setDescription('العضو').setRequired(true)
         )
         .addIntegerOption((option) =>
-          option.setName('دقائق').setDescription('عدد الدقائق').setRequired(true).setMinValue(1)
+          option.setName('دقائق').setDescription('عدد الدقائق').setRequired(true).setMinValue(1).setMaxValue(10000)
         )
     ),
 
