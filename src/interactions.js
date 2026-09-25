@@ -170,6 +170,8 @@ function adminPanelEmbed() {
         '`/لوحة استثناء-قائمة` — عرض المستثنين',
         '`/لوحة تصفير-عضو` — تصفير عضو',
         '`/لوحة تصفير-الكل` — تصفير الجميع',
+        '`/لوحة اضافة-ساعات` — إضافة ساعات يدوياً',
+        '`/لوحة سحب-ساعات` — سحب ساعات يدوياً',
       ].join('\n')
     )
     .setTimestamp();
@@ -391,6 +393,24 @@ async function handleAdminCommand(interaction) {
   if (sub === 'استثناء-عضو') {
     store.addExempt(user.id);
     await interaction.editReply({ content: `تم استثناء ${user} من الإزالة التلقائية.` });
+    return;
+  }
+
+  if (sub === 'اضافة-ساعات') {
+    const mins = interaction.options.getInteger('دقائق', true);
+    const total = store.addWeeklyMinutes(user.id, mins);
+    await interaction.editReply({
+      content: `✅ تمت إضافة **${mins} دقيقة** لـ ${user}\nالإجمالي الآن: **${store.formatDuration(total)}**`,
+    });
+    return;
+  }
+
+  if (sub === 'سحب-ساعات') {
+    const mins = interaction.options.getInteger('دقائق', true);
+    const total = store.removeWeeklyMinutes(user.id, mins);
+    await interaction.editReply({
+      content: `✅ تم سحب **${mins} دقيقة** من ${user}\nالإجمالي الآن: **${store.formatDuration(total)}**`,
+    });
     return;
   }
 

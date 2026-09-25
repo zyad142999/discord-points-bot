@@ -73,6 +73,28 @@ const commands = [
     )
     .addSubcommand((sub) =>
       sub.setName('تصفير-الكل').setDescription('تصفير ساعات الجميع')
+    )
+    .addSubcommand((sub) =>
+      sub
+        .setName('اضافة-ساعات')
+        .setDescription('إضافة ساعات يدوياً لعضو')
+        .addUserOption((option) =>
+          option.setName('عضو').setDescription('العضو').setRequired(true)
+        )
+        .addIntegerOption((option) =>
+          option.setName('دقائق').setDescription('عدد الدقائق').setRequired(true).setMinValue(1)
+        )
+    )
+    .addSubcommand((sub) =>
+      sub
+        .setName('سحب-ساعات')
+        .setDescription('سحب ساعات من عضو')
+        .addUserOption((option) =>
+          option.setName('عضو').setDescription('العضو').setRequired(true)
+        )
+        .addIntegerOption((option) =>
+          option.setName('دقائق').setDescription('عدد الدقائق').setRequired(true).setMinValue(1)
+        )
     ),
 
   new SlashCommandBuilder()

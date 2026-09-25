@@ -162,6 +162,27 @@ function getWeeklyMinutes(userId) {
   return Number(data.weekly[userId]?.totalMinutes || 0);
 }
 
+function addWeeklyMinutes(userId, minutes) {
+  const data = readStore();
+  const prev = Number(data.weekly[userId]?.totalMinutes || 0);
+  data.weekly[userId] = {
+    totalMinutes: prev + minutes,
+  };
+  writeStore(data);
+  return prev + minutes;
+}
+
+function removeWeeklyMinutes(userId, minutes) {
+  const data = readStore();
+  const prev = Number(data.weekly[userId]?.totalMinutes || 0);
+  const newTotal = Math.max(0, prev - minutes);
+  data.weekly[userId] = {
+    totalMinutes: newTotal,
+  };
+  writeStore(data);
+  return newTotal;
+}
+
 function getWeeklyLeaderboard() {
   const data = readStore();
   return Object.entries(data.weekly)
@@ -313,6 +334,8 @@ module.exports = {
   logout,
   forceLogoutWithoutCounting,
   getWeeklyMinutes,
+  addWeeklyMinutes,
+  removeWeeklyMinutes,
   getWeeklyLeaderboard,
   resetUser,
   resetAll,
