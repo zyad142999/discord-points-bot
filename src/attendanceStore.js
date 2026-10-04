@@ -32,6 +32,7 @@ function ensureStore() {
           exceptions: {},
           voiceData: { lastVoiceSeenAt: {}, isInVoice: {} },
           voiceMinutes: {},
+          snooze: {},
         },
         null,
         2
@@ -65,6 +66,10 @@ function readStore() {
         data.voiceMinutes && typeof data.voiceMinutes === 'object'
           ? data.voiceMinutes
           : {},
+      snooze:
+        data.snooze && typeof data.snooze === 'object'
+          ? data.snooze
+          : {},
     };
   } catch {
     return {
@@ -74,6 +79,7 @@ function readStore() {
       exceptions: {},
       voiceData: { lastVoiceSeenAt: {}, isInVoice: {} },
       voiceMinutes: {},
+      snooze: {},
     };
   }
 }
@@ -129,10 +135,24 @@ function logoutInternal(userId, { countMinutes = true } = {}) {
   }
 
   const logoutAt = Date.now();
-  const sessionMinutes = Math.max(
+  let sessionMinutes = Math.max(
     1,
     Math.round((logoutAt - session.loginAt) / 60000)
   );
+
+  // إذا كان المستخدم مستغرقًا في غفوة، نحسب الوقت الفعلي بدون وقت الغفوة
+  const snoozeInfo = data.snooze[userId];
+  if (snoozeInfo && countMinutes) {
+    const snoozeDurationMs = Math.min(
+      logoutAt - snoozeInfo.startedAt,
+      snoozeInfo.expiresAt - snoozeInfo.startedAt
+    );
+    const snoozeMinutes = Math.round(snoozeDurationMs / 60000);
+    sessionMinutes = Math.max(1, sessionMinutes - snoozeMinutes);
+
+    // نحذف الغفوة بعد تسجيل الخروج
+    delete data.snooze[userId];
+  }
 
   if (countMinutes) {
     const prev = Number(data.weekly[userId]?.totalMinutes || 0);
@@ -326,6 +346,113 @@ function getVoiceLeaderboard() {
   // بدون slice عشان نرجع كل الأعضاء
 }
 
+// ─── دوال نظام الغفوة ───────────────────────────────────────────
+
+function startSnooze(userId) {
+  const data = readStore();
+  const SNOOZE_DURATION = 60 * 60 * 1000; // ساعة واحدة بالميلي ثانية
+
+  // إذا كان مستغرق غفوة بالفعل، نرجع المعلومات الحالية
+  if (data.snooze[userId]) {
+    const snoozeInfo = data.snooze[userId];
+    const now = Date.now();
+    if (now < snoozeInfo.expiresAt) {
+      return {
+        ok: false,
+        reason: 'already_snoozing',
+        expiresAt: snoozeInfo.expiresAt,
+        remainingMs: snoozeInfo.expiresAt - now,
+      };
+    }
+  }
+
+  const now = Date.now();
+  data.snooze[userId] = {
+    startedAt: now,
+    expiresAt: now + SNOOZE_DURATION,
+  };
+  writeStore(data);
+
+  return {
+    ok: true,
+    startedAt: now,
+    expiresAt: now + SNOOZE_DURATION,
+    duration: SNOOZE_DURATION,
+  };
+}
+
+function endSnooze(userId) {
+  const data = readStore();
+  if (!data.snooze[userId]) {
+    return { ok: false, reason: 'not_snoozing' };
+  }
+
+  const snoozeInfo = data.snooze[userId];
+  delete data.snooze[userId];
+  writeStore(data);
+
+  return {
+    ok: true,
+    startedAt: snoozeInfo.startedAt,
+    endedAt: Date.now(),
+  };
+}
+
+function isSnoozing(userId) {
+  const data = readStore();
+  const snoozeInfo = data.snooze[userId];
+  if (!snoozeInfo) return false;
+
+  const now = Date.now();
+  if (now >= snoozeInfo.expiresAt) {
+    // الغفوة انتهت، نحذفها
+    delete data.snooze[userId];
+    writeStore(data);
+    return false;
+  }
+
+  return true;
+}
+
+function getSnoozeInfo(userId) {
+  const data = readStore();
+  const snoozeInfo = data.snooze[userId];
+  if (!snoozeInfo) return null;
+
+  const now = Date.now();
+  if (now >= snoozeInfo.expiresAt) {
+    // الغفوة انتهت، نحذفها
+    delete data.snooze[userId];
+    writeStore(data);
+    return null;
+  }
+
+  return {
+    startedAt: snoozeInfo.startedAt,
+    expiresAt: snoozeInfo.expiresAt,
+    remainingMs: snoozeInfo.expiresAt - now,
+  };
+}
+
+function checkExpiredSnoozes() {
+  const data = readStore();
+  const now = Date.now();
+  let cleaned = 0;
+
+  for (const [userId, snoozeInfo] of Object.entries(data.snooze || {})) {
+    if (now >= snoozeInfo.expiresAt) {
+      delete data.snooze[userId];
+      cleaned++;
+    }
+  }
+
+  if (cleaned > 0) {
+    writeStore(data);
+  }
+
+  return cleaned;
+}
+
 module.exports = {
   formatDuration,
   getActive,
@@ -356,4 +483,9 @@ module.exports = {
   resetAllVoiceMinutes,
   getVoiceMinutes,
   getVoiceLeaderboard,
+  startSnooze,
+  endSnooze,
+  isSnoozing,
+  getSnoozeInfo,
+  checkExpiredSnoozes,
 };

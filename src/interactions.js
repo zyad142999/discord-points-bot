@@ -150,6 +150,12 @@ function attendanceButtons() {
         .setLabel('عرض الحضور 📋')
         .setStyle(ButtonStyle.Secondary)
     ),
+    new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId('att_snooze')
+        .setLabel('غفوة 😴')
+        .setStyle(ButtonStyle.Primary)
+    ),
   ];
 }
 
@@ -517,6 +523,44 @@ async function handleViewAttendance(interaction) {
   await interaction.editReply({ embeds: [embed] });
 }
 
+async function handleSnooze(interaction) {
+  await interaction.deferReply({ flags: 64 });
+
+  // التحقق من أن المستخدم مسجل دخول
+  const active = store.getActive(interaction.user.id);
+  if (!active) {
+    await interaction.editReply({
+      content: 'يجب أن تكون مسجل دخول أولاً لاستخدام الغفوة.',
+    });
+    return;
+  }
+
+  const result = store.startSnooze(interaction.user.id);
+
+  if (!result.ok) {
+    const remainingMins = Math.ceil(result.remainingMs / 60000);
+    await interaction.editReply({
+      content: `أنت مستغرق في غفوة بالفعل! باقي ${remainingMins} دقيقة.`,
+    });
+    return;
+  }
+
+  const expiresAt = result.expiresAt;
+  const embed = new EmbedBuilder()
+    .setColor(0x5865f2)
+    .setTitle('تم تفعيل الغفوة 😴')
+    .setDescription(
+      [
+        `${interaction.user} دخل في غفوة.`,
+        `ستنتهي الغفوة في: ${discordTimestamp(expiresAt)} (${discordTimestamp(expiresAt, 'R')})`,
+        `⚠️ وقت الغفوة لن يُحتسب في ساعات حضورك.`,
+      ].join('\n')
+    )
+    .setTimestamp();
+
+  await interaction.editReply({ embeds: [embed] });
+}
+
 async function handleAdminButton(interaction) {
   if (!isAdmin(interaction.user.id, interaction.member)) {
     await interaction.reply({ content: 'هذا الزر للأدمن فقط.', ephemeral: true });
@@ -550,9 +594,13 @@ async function handleViolators(interaction) {
   // نجيب كل أعضاء السيرفر
   let members;
   try {
-    members = await interaction.guild.members.fetch();
-  } catch {
-    await interaction.editReply({ content: 'ما قدرت أجيب قائمة الأعضاء.' });
+    // نحاول جلب الأعضاء مع خيارات للسيرفرات الكبيرة
+    members = await interaction.guild.members.fetch({ limit: 1000 });
+  } catch (error) {
+    console.error('[Violators] Error fetching members:', error);
+    await interaction.editReply({
+      content: '❌ ما قدرت أجيب قائمة الأعضاء. تأكد من أن البوت لديه صلاحية GUILD_MEMBERS و Intent المفعّل في Discord Developer Portal.',
+    });
     return;
   }
 
@@ -650,6 +698,10 @@ async function handleInteraction(interaction) {
     }
     if (interaction.customId === 'att_view') {
       await handleViewAttendance(interaction);
+      return;
+    }
+    if (interaction.customId === 'att_snooze') {
+      await handleSnooze(interaction);
       return;
     }
     if (
